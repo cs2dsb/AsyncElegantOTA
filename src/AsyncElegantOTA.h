@@ -75,13 +75,12 @@ class AsyncElegantOtaClass{
                         return request->requestAuthentication();
                     }
                 }
-                // the request handler is triggered after the upload has finished... 
+                // the request handler is triggered after the upload has finished...
                 // create the response, add header, and send response
                 AsyncWebServerResponse *response = request->beginResponse((Update.hasError())?500:200, "text/plain", (Update.hasError())?"FAIL":"OK");
                 response->addHeader("Connection", "close");
                 response->addHeader("Access-Control-Allow-Origin", "*");
                 request->send(response);
-                restartRequired = true;
             }, [&](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
                 //Upload handler chunks in data
                 if(_authRequired){
@@ -120,8 +119,10 @@ class AsyncElegantOtaClass{
                         return request->send(400, "text/plain", "OTA could not begin");
                     }
                 }
-                    
+
                 if (final) { // if the final flag is set then this is the last frame of data
+                    restartRequired = filename != "filesystem";
+
                     if (!Update.end(true)) { //true to set the size to the current progress
                         Update.printError(Serial);
                         return request->send(400, "text/plain", "Could not end OTA");
